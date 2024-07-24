@@ -18,13 +18,59 @@ Video: [Let's build GPT: from scratch, in code, spelled out.](https://www.youtub
 - Attention Is All You Need (2017) [https://arxiv.org/abs/1706.03762](https://arxiv.org/abs/1706.03762)
 - Language Models are Few-Shot Learners (2020) [https://arxiv.org/abs/2005.14165](https://arxiv.org/abs/2005.14165)
 
+## Hardware requirements
+
+While the project can be compiled even on a CPU for best results you would use a GPU. But not any GPU, it needs to be from Nvidia to use the CUDA capabilities from `torch`. The software stack for AMD is still a WIP. And I have several Nvidia GPUs. To test your own setup under Windows with WSL and Ubuntu 22.04 LTS (don't use 24.04 LTS since it has python 3.12 which is a little to new) with the following few lines:
+
+``` sh
+pip install torch numpy transformers datasets tiktoken wandb tqdm
+git clone https://github.com/karpathy/nanogpt
+cd nanogpt
+python data/shakespeare_char/prepare.py
+python train.py config/train_shakespeare_char.py
+python sample.py --out_dir=out-shakespeare-char
+```
+
+On my slightly older GTX 960 I get the warning after the training call:
+
+``` sh
+torch._dynamo.exc.BackendCompilerFailed: backend='inductor' raised:
+RuntimeError: Found NVIDIA GeForce GTX 960 which is too old to be supported by the triton GPU compiler, which is used
+as the backend. Triton only supports devices of CUDA Capability >= 7.0, but your device is of CUDA capability 5.2
+```
+
+Let's see what I have and what CUDA capabilities these support:
+
+| GPU name     | CUDA cores | Compute Capability |      at     |
+|--------------|-----------:|:------------------:|:-----------:|
+| Quadro FX580 |         32 |         1.1        | hp Z600     |
+| GTX 650      |        384 |         3.0        | hp Z600     |
+| Jetson Nano  |        128 |         5.3        |             |
+| GT750M       |        384 |         3.0        | MBPr15 2014 |
+| M1000M       |        512 |         5.0        | Zbook 15 G3 |
+| GTX960       |       1024 |         5.2        | E5-2696 v3  |
+| RTX3070 Ti   |       6144 |         8.6        | i3 10100    |
+
+Only one of 7 is supported by the Triton GPU compiler. How about a newer GPU?
+
+| GeForce series | CUDA | Architecture | Process |
+|----------------|------|--------------|:-------:|
+| 900            | 5.2  | Maxwell      | 28HP    |
+| 10             | 6.1  | Pascal       | 16FF    |
+| 16             | 7.5  | Turing       | 12FFN   |
+| 20             | 7.5  | Turing       | 12FFN   |
+| 30             | 8.6  | Ampere       | 8LPP    |
+| 40             | 8.9  | Ada Lovelace | 4N      |
+
+Looks like at least series 16 or 20, but probably 30 to be sure when future compilers increase to 8.0.
+
 ## History
 
 This is just for my own sanity. A brief overview of the development of machine learning ML, image classification, object detection, self-driving car expectations, generative pre-trained transformer GPT, AI, AGI, general and generative AI. The first GPT was published by OpenAI in 2018 following the 2017 paper *Attention Is All You Need*.
 
 ## Manual labeling images for Machine Learning - 2007 Image Net
 
-As [Fei Fei Li](https://en.wikipedia.org/wiki/Fei-Fei_Li) explains in her [TET talk in 2015](https://www.youtube.com/watch?v=40riCqvRoMs) the group at Stanford started in 2007 to classify around 1,000,000,000 pictures and used [Amazon Mechanical Turk](https://en.wikipedia.org/wiki/Amazon_Mechanical_Turk) with 48,940 workers in 167 countries to create the image database [ImageNet](https://en.wikipedia.org/wiki/ImageNet). By 2009 the database [https://www.image-net.org/](https://www.image-net.org/) had 14,197,122 labeled images in 21,841 categories. And funding back then was a problem!
+[Fei Fei Li](https://en.wikipedia.org/wiki/Fei-Fei_Li) explains in her [TET talk in 2015](https://www.youtube.com/watch?v=40riCqvRoMs) that her group at Stanford started in 2007 to classify around 1,000,000,000 pictures and used [Amazon Mechanical Turk](https://en.wikipedia.org/wiki/Amazon_Mechanical_Turk) with 48,940 workers in 167 countries to create the image database [ImageNet](https://en.wikipedia.org/wiki/ImageNet). By 2009 the database [https://www.image-net.org/](https://www.image-net.org/) had 14,197,122 labeled images in 21,841 categories. And funding back then was a problem!
 
 ## ILSVRC competition - 2010
 
@@ -40,7 +86,7 @@ To win the ImageNet 2012 challenge [AlexNet](https://en.wikipedia.org/wiki/AlexN
 
 ## Deep Learning for Computer Vision - 2016 Andrej Karpathy
 
-A [great talk about Deep Learning](https://www.youtube.com/watch?v=u6aEYuemt0M) by Andrej Karpathy from September 25, 2016 explains in detail and clarity the different layers in AlexNet and further develpments.
+A [great talk about Deep Learning](https://www.youtube.com/watch?v=u6aEYuemt0M) by Andrej Karpathy from September 25, 2016 explains in detail and clarity the different layers in AlexNet and further develpments. Here is an overview of the layers for AlexNet, and a [benchmark tests](https://github.com/MrYxJ/calculate-flops.pytorch) the FLOPS for each layer with your current GPU is shown below: 
 
 | layer     | size      | architecture                        |    memory | parameter |
 |-----------|-----------|-------------------------------------|----------:|----------:|
@@ -60,6 +106,27 @@ A [great talk about Deep Learning](https://www.youtube.com/watch?v=u6aEYuemt0M) 
 | FC8       | 1000      | 100 neurons (class scores)          |     1,000 |         0 |
 |           |           |                                     | 1,049,571 |    27,232 |
 
+Benchmark run [calflops](https://pypi.org/project/calflops/) (and with this model far from the 22 TFLOPS possible):
+
+``` sh
+(venv) mk@i3:~/test$ python pytorch-calflops.py
+
+------------------------------------- Calculate Flops Results -------------------------------------
+Notations:
+number of parameters (Params), number of multiply-accumulate operations(MACs),
+number of floating-point operations (FLOPs), floating-point operations per second (FLOPS),
+fwd FLOPs (model forward propagation FLOPs), bwd FLOPs (model backward propagation FLOPs),
+default model backpropagation takes 2.00 times as much computation as forward propagation.
+
+Total Training Params:                                                  61.1 M
+fwd MACs:                                                               714.188 MMACs
+fwd FLOPs:                                                              1.4297 GFLOPS
+fwd+bwd MACs:                                                           2.1426 GMACs
+fwd+bwd FLOPs:                                                          4.2892 GFLOPS
+---------------------------------------------------------------------------------------------------
+Alexnet FLOPs:1.4297 GFLOPS   MACs:714.188 MMACs   Params:61.1008 M
+```
+
 Source material from Stanford:
 
 - [https://cs.stanford.edu/people/karpathy/convnetjs/demo/cifar10.html](https://cs.stanford.edu/people/karpathy/convnetjs/demo/cifar10.html) ConvNetJS CIFAR-10 demo needs a little time to download in the background and start
@@ -69,6 +136,8 @@ Source material from Stanford:
 ## Object detection - 2017 YOLO
 
 The [TED Talk from August 2017](https://www.youtube.com/watch?v=Cgxsv1riJhI) by Joseph Redmon from Washington University inspired ideas and possibilities. In his talk he talked about the application for self driving cars. It certainly makes it imaginable, and it was just running on his laptop! 
+
+<img scr="docs/yolo1.jpg" width="48%"> <img scr="docs/yolo2.jpg" width="48%">
 
 ## The transformer model of machine learning and neuronal networks - June 2017
 
@@ -162,3 +231,45 @@ n_embd = 384          # from 32
 According to [1:40:46](https://youtu.be/kCc8FmEb1nY?si=3yNr-iwpgYe5imeX&t=6046) this leads to 15 minutes on a [A100 GPU](https://www.techpowerup.com/gpu-specs/a100-pcie-40-gb.c3623). Let's assume its a 40 GB version with 156 TFLOPS on TF32 this needed 1.4e17 FLOP. If not constrained by having only 8GB of GDDR6X RAM then this should finish on my 3070 Ti after 6100 seconds or 1h40. Or with a price of $2.00 per hour for an A100 I could just rent it for $0.50 to do the calculation.
 
 Memory won't be the limiting factor, as tested with `bigram.py` on both CPU and GPU. And the script does not explicitly uses TF32 ([only 10 bits fraction/significand/mantissa](https://www.exxactcorp.com/blog/hpc/what-is-fp64-fp32-fp16)) but FP32 (23 bits). That's three more bits for fraction than BF16 (7 bits), while all three (FP32, TF32, BF16) have 1 sign bit and 8 bit exponent. The FP32 power of [the A100](https://www.techpowerup.com/gpu-specs/a100-pcie-80-gb.c3821) is 19.49 TFLOPS, so for 15 min = 900 seconds the needed compute is `1.75e16`. Having [21.75 TFLOPS FP32](https://www.techpowerup.com/gpu-specs/geforce-rtx-3070-ti.c3675) on my 3070 Ti the training run of 5000 iterations should take 800 seconds or 13 minutes.
+
+__Update 2024/07/24__: The training run `python train.py config/train_shakespeare_char.py` actually needs just needs 27 seconds to compile, another 24 seconds from the first step to the first iteration. And with iteration times for around 45 ms all  5000 iterations to a final loss of 0.82 (step 5000: train loss 0.62, val loss 1.69) need 6:51 minutes or 411 seconds. GPU dedicated RAM increased from 0.6 GB to 2.7 GB, some 2.1 GB are needed for this exercise. Output from prepare:
+
+``` sh
+mk@i3:~/nanogpt$ python data/shakespeare_char/prepare.py
+length of dataset in characters: 1,115,394
+all the unique characters:
+ !$&',-.3:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+vocab size: 65
+train has 1,003,854 tokens
+val has 111,540 tokens
+```
+
+And training:
+
+```
+mk@i3:~/nanogpt$ python train.py config/train_shakespeare_char.py
+dataset = 'shakespeare_char'
+gradient_accumulation_steps = 1
+batch_size = 64
+block_size = 256 # context of up to 256 previous characters
+
+# baby GPT model :)
+n_layer = 6
+n_head = 6
+n_embd = 384
+dropout = 0.2
+
+learning_rate = 1e-3 # with baby networks can afford to go a bit higher
+max_iters = 5000
+
+tokens per iteration will be: 16,384
+found vocab_size = 65 (inside data/shakespeare_char/meta.pkl)
+Initializing a new model from scratch
+number of parameters: 10.65M
+num decayed parameter tensors: 26, with 10,740,096 parameters
+num non-decayed parameter tensors: 13, with 4,992 parameters
+using fused AdamW: True
+
+step 5000: train loss 0.6210, val loss 1.6979
+iter 5000: loss 0.8202, time 7435.02ms, mfu 7.53%
+```
