@@ -41,26 +41,26 @@ as the backend. Triton only supports devices of CUDA Capability >= 7.0, but your
 
 Let's see what I have and what CUDA capabilities these support:
 
-| GPU name     | CUDA cores | Compute Capability |      at     |
-|--------------|-----------:|:------------------:|:-----------:|
-| Quadro FX580 |         32 |         1.1        | hp Z600     |
-| GTX 650      |        384 |         3.0        | hp Z600     |
-| Jetson Nano  |        128 |         5.3        |             |
-| GT750M       |        384 |         3.0        | MBPr15 2014 |
-| M1000M       |        512 |         5.0        | Zbook 15 G3 |
-| GTX960       |       1024 |         5.2        | E5-2696 v3  |
-| RTX3070 Ti   |       6144 |         8.6        | i3 10100    |
+| GPU name     | CUDA cores | Compute Capability |      at     | architecture |
+|--------------|-----------:|:------------------:|:-----------:|--------------|
+| Quadro FX580 |         32 |         1.1        | hp Z600     | Tesla (2006) |
+| GTX 650      |        384 |         3.0        | hp Z600     | Kepler (2012) |
+| Jetson Nano  |        128 |         5.3        |             | Maxwell (2014) |
+| GT750M       |        384 |         3.0        | MBPr15 2014 | Kepler (2012) |
+| M1000M       |        512 |         5.0        | Zbook 15 G3 | Kepler (2012) |
+| GTX960       |       1024 |         5.2        | E5-2696 v3  | [Maxwell](https://en.wikipedia.org/wiki/Maxwell_(microarchitecture)) |
+| RTX3070 Ti   |       6144 |         8.6        | i3 10100    | Ampere       |
 
 Only one of 7 is supported by the Triton GPU compiler. How about a newer GPU?
 
-| GeForce series | CUDA | Architecture | Process |
-|----------------|------|--------------|:-------:|
-| 900            | 5.2  | Maxwell      | 28HP    |
-| 10             | 6.1  | Pascal       | 16FF    |
-| 16             | 7.5  | Turing       | 12FFN   |
-| 20             | 7.5  | Turing       | 12FFN   |
-| 30             | 8.6  | Ampere       | 8LPP    |
-| 40             | 8.9  | Ada Lovelace | 4N      |
+| GeForce series | CUDA | Architecture | Process | Year |
+|----------------|------|--------------|:-------:|------|
+| 900            | 5.2  | [Maxwell](https://en.wikipedia.org/wiki/Maxwell_(microarchitecture))      | 28HP    | 2014 |
+| 10             | 6.1  | Pascal       | 16FF    | 2016 |
+| 16             | 7.5  | Turing       | 12FFN   | 2018 |
+| 20             | 7.5  | Turing       | 12FFN   | 2018 |
+| 30             | 8.6  | Ampere       | 8LPP    | 2020 |
+| 40             | 8.9  | Ada Lovelace | 4N      | 2022 |
 
 Looks like at least series 16 or 20, but probably 30 to be sure when future compilers increase to 8.0.
 
@@ -137,7 +137,9 @@ Source material from Stanford:
 
 The [TED Talk from August 2017](https://www.youtube.com/watch?v=Cgxsv1riJhI) by Joseph Redmon from Washington University inspired ideas and possibilities. In his talk he talked about the application for self driving cars. It certainly makes it imaginable, and it was just running on his laptop! 
 
-<img scr="docs/yolo1.jpg" width="48%"> <img scr="docs/yolo2.jpg" width="48%">
+<img src="https://raw.githubusercontent.com/kreier/nano-gpt/main/docs/yolo1.jpg" width="28%"> <img src="https://raw.githubusercontent.com/kreier/nano-gpt/main/docs/yolo2.jpg" width="70%">
+
+<img src="https://raw.githubusercontent.com/kreier/jetson-car/main/pic/white10x1.png" width="25%"> <img src="https://raw.githubusercontent.com/kreier/nano-gpt/main/docs/yolo-timeline.png" width="50%">
 
 ## The transformer model of machine learning and neuronal networks - June 2017
 
