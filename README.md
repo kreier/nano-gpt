@@ -41,26 +41,28 @@ as the backend. Triton only supports devices of CUDA Capability >= 7.0, but your
 
 Let's see what I have and what CUDA capabilities these support:
 
-| GPU name     | CUDA cores | Compute Capability |      at     | architecture |
-|--------------|-----------:|:------------------:|:-----------:|--------------|
-| Quadro FX580 |         32 |         1.1        | hp Z600     | Tesla (2006) |
-| GTX 650      |        384 |         3.0        | hp Z600     | Kepler (2012) |
-| Jetson Nano  |        128 |         5.3        |             | Maxwell (2014) |
-| GT750M       |        384 |         3.0        | MBPr15 2014 | Kepler (2012) |
-| M1000M       |        512 |         5.0        | Zbook 15 G3 | Kepler (2012) |
-| GTX960       |       1024 |         5.2        | E5-2696 v3  | [Maxwell](https://en.wikipedia.org/wiki/Maxwell_(microarchitecture)) |
-| RTX3070 Ti   |       6144 |         8.6        | i3 10100    | Ampere       |
+| GPU name     | CUDA cores | Compute Capability |      at     | architecture | RAM GB |
+|--------------|-----------:|:------------------:|:-----------:|--------------|-------:|
+| Quadro FX580 |         32 |         1.1        | hp Z600     | [Tesla](https://en.wikipedia.org/wiki/Tesla_(microarchitecture)) (2006) |    0.5 |
+| GTX 650      |        384 |         3.0        | hp Z600     | [Kepler](https://en.wikipedia.org/wiki/Kepler_(microarchitecture)) (2012) |     1 |
+| Jetson Nano  |        128 |         5.3        |             | [Maxwell](https://en.wikipedia.org/wiki/Maxwell_(microarchitecture)) (2014) |    4 |
+| GT750M       |        384 |         3.0        | MBPr15 2014 | Kepler (2012) |   0.5 |
+| M1000M       |        512 |         5.0        | Zbook 15 G3 | Kepler (2012) |     1 |
+| GTX960       |       1024 |         5.2        | E5-2696 v3  | Maxwell (2014) |    2 |
+| T4           |       2560 |         7.5        | Google Colab | Turing (2018) |   16 |
+| RTX3070 Ti   |       6144 |         8.6        | i3 10100    | Ampere (2020)  |    8 |
 
 Only one of 7 is supported by the Triton GPU compiler. How about a newer GPU?
 
 | GeForce series | CUDA | Architecture | Process | Year |
 |----------------|------|--------------|:-------:|------|
 | 900            | 5.2  | [Maxwell](https://en.wikipedia.org/wiki/Maxwell_(microarchitecture))      | 28HP    | 2014 |
-| 10             | 6.1  | Pascal       | 16FF    | 2016 |
-| 16             | 7.5  | Turing       | 12FFN   | 2018 |
+| 10             | 6.1  | [Pascal](https://en.wikipedia.org/wiki/Pascal_(microarchitecture))        | 16FF    | 2016 |
+| 16             | 7.5  | [Turing](https://en.wikipedia.org/wiki/Turing_(microarchitecture))        | 12FFN   | 2018 |
 | 20             | 7.5  | Turing       | 12FFN   | 2018 |
-| 30             | 8.6  | Ampere       | 8LPP    | 2020 |
-| 40             | 8.9  | Ada Lovelace | 4N      | 2022 |
+| 30             | 8.6  | [Ampere](https://en.wikipedia.org/wiki/Ampere_(microarchitecture))        | 8LPP    | 2020 |
+| 40             | 8.9  | [Ada Lovelace](https://en.wikipedia.org/wiki/Ada_Lovelace_(microarchitecture)) | 4N | 2022 |
+| 50             | 10.0 | [Blackwell](https://en.wikipedia.org/wiki/Blackwell_(microarchitecture))  | 4NP     | 2024 |
 
 Looks like at least series 16 or 20, but probably 30 to be sure when future compilers increase to 8.0.
 
@@ -248,7 +250,7 @@ val has 111,540 tokens
 
 And training:
 
-```
+``` sh
 mk@i3:~/nanogpt$ python train.py config/train_shakespeare_char.py
 dataset = 'shakespeare_char'
 gradient_accumulation_steps = 1
@@ -275,3 +277,12 @@ using fused AdamW: True
 step 5000: train loss 0.6210, val loss 1.6979
 iter 5000: loss 0.8202, time 7435.02ms, mfu 7.53%
 ```
+
+__Update 2024/07/29:__ Andrej mentions that he uses a A100 GPU. In the video the time needed is 15 minutes, on [the website for nanoGPT](https://github.com/karpathy/nanoGPT) it is down to just 3 minutes. My 3070 Ti is only half as fast. But there is a cheaper option: in [Google Colab](https://colab.research.google.com/) you can use a GPU instance called T4. That's a [Nvidia Tesla T4](https://www.pny.com/en-eu/nvidia-t4) data center GPU with 16 GB RAM and [Turing Microarchitecture](https://en.wikipedia.org/wiki/Turing_(microarchitecture)) (CUDA 7.5 and therefore compatible!). It does not support `bf16` and the CUDA compiler Triton throws some errors, but you can just add two lines to the top of the `train.py` and it compiles and trains!
+
+``` python
+import torch._dynamo
+torch._dynamo.config.suppress_errors = True
+```
+
+We don't get the impressive 130 TOPS INT8 performance, and only a fraction of the 8.1 TFLOPS FP32 performance since we share it. But the cycle times of 520 ms are not that bad, and after one hour (Google provides more than 2 hours runtime for free) the model is trained and ready to use! See my [Jupyter Notebook at colab.google](https://colab.research.google.com/drive/1h2trNGGP_WfG49ADUg6K32217CnTZgC2?usp=sharing) or here at Github.
