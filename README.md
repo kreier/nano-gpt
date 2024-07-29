@@ -195,7 +195,7 @@ It seemed like the combination of object detection and classification was the ma
 - __GPT-3__ needed `3.1e23` FLOP
 - __GPT-3.5__ undisclosed
 - __GPT-4__ needed `2.1e25` FLOP estimated
-- __3070 Ti__ running 24h: 2.3e13 FLOPS x 86400 = `1.9e18` - not even enough for GPT-1 (according to [test with OpenCL](https://github.com/kreier/benchmark/tree/main/gpu/opencl)), that would require 45 days!
+- __3070 Ti__ running 24h: 2.3e13 FLOPS x 86400 = `1.9e18` FLOP - not even enough for GPT-1 (according to [test with OpenCL](https://github.com/kreier/benchmark/tree/main/gpu/opencl)), that would require 45 days!
 - __nanoGPT__ estimated at `1.75e16` (see below) or 800 seconds on my 3070 Ti
 
 __First run__ of `bigram.py` at [0:41:44](https://youtu.be/kCc8FmEb1nY?si=sS4_QPI_ic_WNMt0&t=2504) with 3000 iterations in just a few seconds
@@ -286,3 +286,15 @@ torch._dynamo.config.suppress_errors = True
 ```
 
 We don't get the impressive 130 TOPS INT8 performance, and only a fraction of the 8.1 TFLOPS FP32 performance since we share it. But the cycle times of 520 ms are not that bad, and after one hour (Google provides more than 2 hours runtime for free) the model is trained and ready to use! See my [Jupyter Notebook at colab.google](https://colab.research.google.com/drive/1h2trNGGP_WfG49ADUg6K32217CnTZgC2?usp=sharing) or here at Github.
+
+## Energy efficiency
+
+| year | Device         | TOPS | Watt | FP16   | FP32  | Price | TOPS/Watt |
+|------|----------------|-----:|-----:|--------|-------|------:|:---------:|
+| 2017 | TPU v2         |   45 |  280 |      - |     - |       | 0.16      |
+| 2018 | T4             |  130 |   70 |  64800 |  8100 |   900 | 1.86      |
+| 2019 | Coral TPU      |    8 |    4 |      - |     - |    40 | 2.00      |
+| 2021 | 3070 Ti        |   22 |  290 |  21750 | 21750 |   500 | 0.07      |
+| 2023 | L4             |  242 |   72 | 121000 | 30300 |  2500 | 3.36      |
+| 2024 | Grayskull e75  |  221 |   75 |        |       |   600 | 2.95      |
+| 2024 | Wormhole n300s | 466  | 300  |        |       |  1400 | 1.55      |
